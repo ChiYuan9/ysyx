@@ -1,5 +1,5 @@
 STUID = ysyx_22041716
-STUNAME = 迟源
+STUNAME =Yuan Chi 
 
 # DO NOT modify the following code!!!
 
