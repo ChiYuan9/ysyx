@@ -1,5 +1,5 @@
-TOPNAME = light
-NXDC_FILES = constr/light/light.nxdc
+TOPNAME = mux41_2
+NXDC_FILES = constr/exp/exp1.nxdc
 INC_PATH ?=
 
 VERILATOR = verilator
@@ -20,8 +20,8 @@ $(SRC_AUTO_BIND): $(NXDC_FILES)
 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
 
 #project source
-VSRCS = $(shell find $(abspath ./vsrc/light) -name "*.v")
-CSRCS = $(shell find $(abspath ./csrc/light) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
+VSRCS = $(shell find $(abspath ./vsrc/exp/exp1) -name "*.v")
+CSRCS = $(shell find $(abspath ./csrc/exp/exp1) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
 CSRCS += $(SRC_AUTO_BIND)
 
 #rules for NVBoard
