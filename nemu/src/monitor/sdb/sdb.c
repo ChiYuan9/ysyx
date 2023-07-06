@@ -18,6 +18,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include <memory/paddr.h>
+#include <memory/vaddr.h>
 
 static int is_batch_mode = false;
 
@@ -61,14 +63,19 @@ static int cmd_x(char *args){
     return 0;
   }
   int n = atoi(arg1);
-  printf("Number: %d\n", n);
+
   char *endPtr;
   long addr = strtol(arg2, &endPtr, 16);
   if(endPtr == arg2) {
         printf("Invalid hex value: %s\n", arg2);
         return 0;
   }
-  printf("Address: 0x%lx\n", addr);
+  
+  for(int i = 0; i < n; i++){
+    printf("0x%lx: 0x%lx\t", addr, vaddr_read(addr, 4));
+    addr += 4;
+  }
+  printf("\n");
 
   return 0;
 }
