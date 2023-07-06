@@ -53,6 +53,26 @@ static int cmd_si(char *args) {
   return 0;
 }
 
+static int cmd_x(char *args){
+  char *arg1 = strtok(NULL, " ");
+  char *arg2 = strtok(NULL, " ");
+  if(arg1 == NULL || arg2 == NULL){
+    printf("Pleas provide two arguments\n");
+    return 0;
+  }
+  int n = atoi(arg1);
+  printf("Number: %d\n", n);
+  char *endPtr;
+  long addr = strtol(arg2, &endPtr, 16);
+  if(endPtr == arg2) {
+        printf("Invalid hex value: %s\n", arg2);
+        return 0;
+  }
+  printf("Address: 0x%lx\n", addr);
+
+  return 0;
+}
+
 static int cmd_info(char *args){
   if(args[0] == 'r'){
     isa_reg_display();
@@ -81,6 +101,7 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "si", "Execute N instructions in single-step", cmd_si },
   { "info", "Display register state with'r', Display watchpoint info with 'w'", cmd_info},
+  { "x", "-N -EXPR\tCalculate the value of the EXPR, use the result as the starting memory address, and output N consecutive 4-byte values in hexadecimal format", cmd_x },
 
   /* TODO: Add more commands */
 
