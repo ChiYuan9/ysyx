@@ -53,6 +53,17 @@ static int cmd_si(char *args) {
   return 0;
 }
 
+static int cmd_info(char *args){
+  if(args[0] == 'r'){
+    isa_reg_display();
+  }else if(args[0] == 'w'){
+    return 0;
+  }else{
+    printf("Unknown argument\n");
+  }
+  return 0;
+
+}
 
 static int cmd_q(char *args) {
   return -1;
@@ -69,6 +80,7 @@ static struct {
   { "c", "Continue the execution of the program", cmd_c },
   { "q", "Exit NEMU", cmd_q },
   { "si", "Execute N instructions in single-step", cmd_si },
+  { "info", "Display register state with'r', Display watchpoint info with 'w'", cmd_info},
 
   /* TODO: Add more commands */
 
