@@ -93,8 +93,14 @@ static int cmd_info(char *args){
 }
 
 static int cmd_p(char *args){
-  bool* flag = false;
-  expr(args, flag);
+  bool flag = false;
+  uint32_t result;
+  result = expr(args, &flag);
+  if(flag == true){
+    printf("The result of expression is: %d\n", result);
+  } else{
+    printf("Not a good expression.\n");
+  }
   return 0;
 }
 

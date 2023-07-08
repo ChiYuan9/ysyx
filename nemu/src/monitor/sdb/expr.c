@@ -19,7 +19,9 @@
  * Type 'man regex' for more information about POSIX regex functions.
  */
 #include <regex.h>
-
+static bool check_parentheses(int p, int q);
+static int get_pos(int p, int q);
+static uint32_t eval(int p, int q);
 enum {
   TK_NOTYPE = 256, TK_EQ,
   TK_NUM = 255,
@@ -35,7 +37,7 @@ static struct rule {
   /* TODO: Add more rules.
    * Pay attention to the precedence level of different rules.
    */
-  {"[0-9]{1,32}", TK_NUM}, // decimal numbers
+  {"[0-9]+", TK_NUM}, // decimal numbers
   {" +", TK_NOTYPE},    // spaces
   {"\\+", '+'},          // plus
   {"\\-", '-'},          // minus
@@ -93,7 +95,6 @@ static bool make_token(char *e) {
             i, rules[i].regex, position, substr_len, substr_len, substr_start);
 
         position += substr_len;
-
         /* TODO: Now a new token is recognized with rules[i]. Add codes
          * to record the token in the array `tokens'. For certain types
          * of tokens, some extra actions should be performed.
@@ -103,14 +104,11 @@ static bool make_token(char *e) {
           break;
         } else if(tokens[nr_token].type == TK_NUM){
           for(int count = 0; count < substr_len; count++){
-            tokens[nr_token].str[count] = e[position + count];
+            tokens[nr_token].str[count] = e[position - substr_len + count];
           }
+          tokens[nr_token].str[substr_len] = '\0';
         }
         nr_token++;
-        
-        switch (rules[i].token_type) {
-          default: TODO();
-        }
         
         break;
       }
@@ -133,7 +131,81 @@ word_t expr(char *e, bool *success) {
   }
 
   /* TODO: Insert codes to evaluate the expression. */
-  TODO();
+  *success = true;
+  return eval(0,nr_token - 1);
+}
 
-  return 0;
+static uint32_t eval(int p, int q){
+  if(p > q){
+    printf("Bad expression.\n");
+    return 0;
+  }
+  else if(p == q){
+    char *endptr;
+    return strtoul(tokens[p].str, &endptr, 10);
+  }
+  else if(check_parentheses(p, q) == true){
+    return eval(p+1, q-1);
+  }
+  else{
+    int op = get_pos(p, q);
+    uint32_t val1 = eval(p, op-1);
+    uint32_t val2 = eval(op+1, q);
+
+    switch(tokens[op].type){
+      case '+': return val1 + val2;
+      case '-': return val1 - val2;
+      case '*': return val1 * val2;
+      case '/': return val1 / val2;
+      default: assert(0);
+    }
+  }
+}
+
+static bool check_parentheses(int p, int q){
+  int count = 0;
+  if(tokens[p].type != '(' || tokens[q].type != ')'){
+    return false;
+  }
+  for(int i = p; i <= q; i++){
+    if(tokens[i].type == '('){
+      count++;
+    } else if(tokens[i].type == ')'){
+      count--;
+    }
+    if(count < 0){  // bad expression
+      assert(0);
+    }
+    if(count == 0 && i != q){
+      return false;
+    }
+   
+  }
+  return true;
+
+}
+
+static int get_pos(int p, int q){
+  int bricket_count = 0;
+  int pos = 0;
+  bool is_addsub = false;
+
+  for(int i = p; i <= q; i++){
+    if(tokens[i].type == '('){
+      bricket_count++;
+    } else if(tokens[i].type == ')'){
+      bricket_count--;
+    } else if(tokens[i].type == '+' || tokens[i].type == '-'){
+      if(bricket_count == 0){
+        pos = i;
+        is_addsub = true;
+      }
+    } else if(tokens[i].type == '*' || tokens[i].type == '/'){
+      if(bricket_count == 0 && is_addsub == false){
+        pos = i;
+      }
+    }
+  }
+  return pos;
+
 }
