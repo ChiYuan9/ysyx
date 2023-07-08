@@ -92,6 +92,12 @@ static int cmd_info(char *args){
 
 }
 
+static int cmd_p(char *args){
+  bool* flag = false;
+  expr(args, flag);
+  return 0;
+}
+
 static int cmd_q(char *args) {
   return -1;
 }
@@ -108,7 +114,8 @@ static struct {
   { "q", "Exit NEMU", cmd_q },
   { "si", "Execute N instructions in single-step", cmd_si },
   { "info", "Display register state with'r', Display watchpoint info with 'w'", cmd_info},
-  { "x", "-N -EXPR\tCalculate the value of the EXPR, use the result as the starting memory address, and output N consecutive 4-byte values in hexadecimal format", cmd_x },
+  { "x", "Display memory", cmd_x },
+  { "p", "Calculate the experssion", cmd_p},
 
   /* TODO: Add more commands */
 

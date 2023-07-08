@@ -22,7 +22,7 @@
 
 enum {
   TK_NOTYPE = 256, TK_EQ,
-
+  TK_NUM = 255,
   /* TODO: Add more token types */
 
 };
@@ -35,9 +35,14 @@ static struct rule {
   /* TODO: Add more rules.
    * Pay attention to the precedence level of different rules.
    */
-
+  {"[0-9]{1,32}", TK_NUM}, // decimal numbers
   {" +", TK_NOTYPE},    // spaces
-  {"\\+", '+'},         // plus
+  {"\\+", '+'},          // plus
+  {"\\-", '-'},          // minus
+  {"\\*", '*'},          // multiply
+  {"\\/", '/'},          // devide
+  {"\\(", '('},          // left bracket
+  {"\\)", ')'},          // right bracket
   {"==", TK_EQ},        // equal
 };
 
@@ -93,11 +98,20 @@ static bool make_token(char *e) {
          * to record the token in the array `tokens'. For certain types
          * of tokens, some extra actions should be performed.
          */
-
+        tokens[nr_token].type = rules[i].token_type;
+        if(tokens[nr_token].type == TK_NOTYPE){
+          break;
+        } else if(tokens[nr_token].type == TK_NUM){
+          for(int count = 0; count < substr_len; count++){
+            tokens[nr_token].str[count] = e[position + count];
+          }
+        }
+        nr_token++;
+        /*
         switch (rules[i].token_type) {
           default: TODO();
         }
-
+        */
         break;
       }
     }
