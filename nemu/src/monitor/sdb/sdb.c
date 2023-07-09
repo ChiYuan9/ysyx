@@ -97,7 +97,7 @@ static int cmd_p(char *args){
   uint32_t result;
   result = expr(args, &flag);
   if(flag == true){
-    printf("The result of expression is: %d\n", result);
+    printf("The result of expression is: %u\n", result);
   } else{
     printf("Not a good expression.\n");
   }

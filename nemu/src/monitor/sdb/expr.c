@@ -19,15 +19,15 @@
  * Type 'man regex' for more information about POSIX regex functions.
  */
 #include <regex.h>
-static bool check_parentheses(int p, int q);
-static int get_pos(int p, int q);
-static uint32_t eval(int p, int q);
 enum {
   TK_NOTYPE = 256, TK_EQ,
   TK_NUM = 255,
   /* TODO: Add more token types */
 
 };
+static uint32_t eval(int p, int q);
+static bool check_parentheses(int p, int q);
+static int get_pos(int p, int q);
 
 static struct rule {
   const char *regex;
@@ -74,7 +74,7 @@ typedef struct token {
   char str[32];
 } Token;
 
-static Token tokens[32] __attribute__((used)) = {};
+static Token tokens[1000] __attribute__((used)) = {};
 static int nr_token __attribute__((used))  = 0;
 
 static bool make_token(char *e) {
@@ -88,11 +88,13 @@ static bool make_token(char *e) {
     /* Try all rules one by one. */
     for (i = 0; i < NR_REGEX; i ++) {
       if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
-        char *substr_start = e + position;
+        //char *substr_start = e + position;
         int substr_len = pmatch.rm_eo;
 
+        /*
         Log("match rules[%d] = \"%s\" at position %d with len %d: %.*s",
             i, rules[i].regex, position, substr_len, substr_len, substr_start);
+        */
 
         position += substr_len;
         /* TODO: Now a new token is recognized with rules[i]. Add codes
@@ -103,10 +105,14 @@ static bool make_token(char *e) {
         if(tokens[nr_token].type == TK_NOTYPE){
           break;
         } else if(tokens[nr_token].type == TK_NUM){
-          for(int count = 0; count < substr_len; count++){
+          for(int count = 0; count < substr_len && count < 32; count++){
             tokens[nr_token].str[count] = e[position - substr_len + count];
           }
-          tokens[nr_token].str[substr_len] = '\0';
+          if(substr_len > 32){
+            printf("Number longer than 32 bits are treated as %s\n.",tokens[nr_token].str);
+          }else {
+            tokens[nr_token].str[substr_len] = '\0';
+          }
         }
         nr_token++;
         
