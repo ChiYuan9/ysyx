@@ -22,6 +22,7 @@
 
 // this should be enough
 static char buf[65536] = {};
+static uint32_t nr_exp = 0;
 static char code_buf[65536 + 128] = {}; // a little larger than `buf`
 static char *code_format =
 "#include <stdio.h>\n"
@@ -31,8 +32,60 @@ static char *code_format =
 "  return 0; "
 "}";
 
+static void gen_num(){
+  for(int i = nr_exp; i < nr_exp + 10; i++){
+    if(i == nr_exp){
+      buf[i] = '1' + rand() % 9;
+    }else{
+      buf[i] = '0' + rand()% 10;
+    }
+  }
+  nr_exp += 10;
+}
+
+static void gen_rand_op(){
+  switch(rand() % 4){
+    case 0: 
+        buf[nr_exp] = '+';
+        break;
+    case 1:
+        buf[nr_exp] = '-';
+        break;
+    case 2:
+        buf[nr_exp] = '*';
+        break;
+    case 3:
+        buf[nr_exp] = '/';
+        break;
+    default:
+        break;
+  }
+  nr_exp++;
+}
 static void gen_rand_expr() {
-  buf[0] = '\0';
+  if (nr_exp >= sizeof(buf) - 1) {
+    return;
+  }
+
+  switch(rand() % 3){
+    case 0: 
+          gen_num();
+          break;
+    case 1:
+          buf[nr_exp] = '(';
+          nr_exp++;
+          gen_rand_expr();
+          buf[nr_exp] = ')';
+          nr_exp++;
+          break;
+    default:
+          gen_rand_expr();
+          gen_rand_op();
+          gen_rand_expr();
+          break;
+  }
+
+  buf[nr_exp] = '\0';
 }
 
 int main(int argc, char *argv[]) {
@@ -45,6 +98,7 @@ int main(int argc, char *argv[]) {
   int i;
   for (i = 0; i < loop; i ++) {
     gen_rand_expr();
+    nr_exp = 0;
 
     sprintf(code_buf, code_format, buf);
 
@@ -60,7 +114,7 @@ int main(int argc, char *argv[]) {
     assert(fp != NULL);
 
     int result;
-    ret = fscanf(fp, "%d", &result);
+    ret = fscanf(fp, "%u", &result);
     pclose(fp);
 
     printf("%u %s\n", result, buf);
