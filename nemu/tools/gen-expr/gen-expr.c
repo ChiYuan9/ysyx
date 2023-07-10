@@ -44,7 +44,7 @@ static void gen_num(){
 }
 
 static void gen_rand_op(){
-  switch(rand() % 4){
+  switch(rand() % 3){
     case 0: 
         buf[nr_exp] = '+';
         break;
@@ -63,11 +63,11 @@ static void gen_rand_op(){
   nr_exp++;
 }
 static void gen_rand_expr() {
-  if (nr_exp >= sizeof(buf) - 1) {
-    return;
+  int choose = rand() % 3;
+  if(nr_exp > 100){
+    choose = 0;
   }
-
-  switch(rand() % 3){
+  switch(choose){
     case 0: 
           gen_num();
           break;
