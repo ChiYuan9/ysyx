@@ -14,18 +14,25 @@
 ***************************************************************************************/
 
 #include <isa.h>
-
+#include <memory/vaddr.h>
 /* We use the POSIX regex functions to process regular expressions.
  * Type 'man regex' for more information about POSIX regex functions.
  */
 #include <regex.h>
 enum {
-  TK_NOTYPE = 256, TK_EQ,
+  TK_NOTYPE = 256,
+  TK_EQ = 257,
   TK_NUM = 255,
+  TK_NE = 254,
+  TK_AND = 253,
+  TK_HEX = 252,
+  TK_REG = 251,
+  TK_DEREF = 250,
+  TK_NEG = 249
   /* TODO: Add more token types */
 
 };
-static uint32_t eval(int p, int q);
+static uint64_t eval(int p, int q);
 static bool check_parentheses(int p, int q);
 static int get_pos(int p, int q);
 
@@ -37,7 +44,7 @@ static struct rule {
   /* TODO: Add more rules.
    * Pay attention to the precedence level of different rules.
    */
-  {"[0-9]+", TK_NUM}, // decimal numbers
+  {"[1-9][0-9]*", TK_NUM}, // decimal numbers
   {" +", TK_NOTYPE},    // spaces
   {"\\+", '+'},          // plus
   {"\\-", '-'},          // minus
@@ -46,6 +53,10 @@ static struct rule {
   {"\\(", '('},          // left bracket
   {"\\)", ')'},          // right bracket
   {"==", TK_EQ},        // equal
+  {"!=", TK_NE},          // not equal
+  {"&&", TK_AND},         // and
+  {"0x[0-9|a-f|A_F]+", TK_HEX},   // hex numbers
+  {"\\$..", TK_REG},      // register
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -102,20 +113,32 @@ static bool make_token(char *e) {
          * of tokens, some extra actions should be performed.
          */
         tokens[nr_token].type = rules[i].token_type;
-        if(tokens[nr_token].type == TK_NOTYPE){
-          break;
-        } else if(tokens[nr_token].type == TK_NUM){
-          for(int count = 0; count < substr_len && count < 32; count++){
-            tokens[nr_token].str[count] = e[position - substr_len + count];
-          }
-          if(substr_len > 32){
-            printf("Number longer than 32 bits are treated as %s\n.",tokens[nr_token].str);
-          }else {
-            tokens[nr_token].str[substr_len] = '\0';
-          }
+        switch(tokens[nr_token].type){
+          case TK_NOTYPE: 
+                break;
+          case TK_HEX:
+          case TK_NUM:
+                for(int count = 0; count < substr_len && count < 32; count++){
+                  tokens[nr_token].str[count] = e[position - substr_len + count];
+                }
+                if(substr_len > 32){
+                    printf("Number longer than 32 bits are treated as %s\n.",tokens[nr_token].str);
+                }else {
+                    tokens[nr_token].str[substr_len] = '\0';
+                }
+                nr_token++;
+                break;
+          case TK_REG:
+                for(int count = 1; count < 3; count++){
+                  tokens[nr_token].str[count-1] = e[position - substr_len + count];
+                }
+                tokens[nr_token].str[2] = '\0';
+                nr_token++;
+                break;
+          default:
+                nr_token++;
+                break;
         }
-        nr_token++;
-        
         break;
       }
     }
@@ -130,39 +153,65 @@ static bool make_token(char *e) {
 }
 
 
-word_t expr(char *e, bool *success) {
+uint64_t expr(char *e, bool *success) {
   if (!make_token(e)) {
     *success = false;
     return 0;
   }
 
   /* TODO: Insert codes to evaluate the expression. */
+  for(int i = 0; i < nr_token; i++){
+    if(tokens[i].type == '-' && (i == 0 || (tokens[i-1].type < 200 && tokens[i-1].type != ')'))){
+      tokens[i].type = TK_NEG;
+    }else if(tokens[i].type == '*' && (i == 0 || (tokens[i-1].type < 200 && tokens[i-1].type != ')'))){
+      tokens[i].type = TK_DEREF;
+    }
+  }
   *success = true;
   return eval(0,nr_token - 1);
 }
 
-static uint32_t eval(int p, int q){
+static uint64_t eval(int p, int q){
   if(p > q){
     printf("Bad expression.\n");
     return 0;
   }
   else if(p == q){
     char *endptr;
-    return strtoul(tokens[p].str, &endptr, 10);
+    bool success;
+    switch(tokens[p].type){
+      case TK_NUM: return strtol(tokens[p].str, &endptr, 10);
+      case TK_HEX: return strtol(tokens[p].str, &endptr, 16);
+      case TK_REG: return isa_reg_str2val(tokens[p].str, &success);
+
+      default: assert(0);
+    }
   }
   else if(check_parentheses(p, q) == true){
     return eval(p+1, q-1);
   }
+  else if((q - p) == 1){
+    switch(tokens[p].type){
+      case TK_NEG: return -1*eval(q,q);
+      case TK_DEREF: 
+              int addr = eval(q,q);
+              return vaddr_read(addr, 4);
+      default: assert(0);
+    }
+  }
   else{
     int op = get_pos(p, q);
-    uint32_t val1 = eval(p, op-1);
-    uint32_t val2 = eval(op+1, q);
+    uint64_t val1 = eval(p, op-1);
+    uint64_t val2 = eval(op+1, q);
 
     switch(tokens[op].type){
       case '+': return val1 + val2;
       case '-': return val1 - val2;
       case '*': return val1 * val2;
       case '/': return val1 / val2;
+      case TK_AND: return val1 && val2;
+      case TK_EQ: return val1 == val2;
+      case TK_NE: return val1 != val2;
       default: assert(0);
     }
   }
@@ -195,7 +244,8 @@ static int get_pos(int p, int q){
   int bricket_count = 0;
   int pos = 0;
   bool is_addsub = false;
-
+  bool is_muldiv = false;
+  bool is_equal = false;
   for(int i = p; i <= q; i++){
     if(tokens[i].type == '('){
       bricket_count++;
@@ -208,6 +258,16 @@ static int get_pos(int p, int q){
       }
     } else if(tokens[i].type == '*' || tokens[i].type == '/'){
       if(bricket_count == 0 && is_addsub == false){
+        pos = i;
+        is_muldiv = true;
+      }
+    } else if(tokens[i].type == TK_EQ || tokens[i].type == TK_NE){
+      if(bricket_count == 0 && is_addsub == false && is_muldiv == false){
+        pos = i;
+        is_equal = true;
+      }
+    } else if(tokens[i].type == TK_AND){
+      if(bricket_count == 0 && !is_addsub && !is_muldiv && !is_equal){
         pos = i;
       }
     }

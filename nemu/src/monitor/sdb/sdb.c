@@ -94,10 +94,10 @@ static int cmd_info(char *args){
 
 static int cmd_p(char *args){
   bool flag = false;
-  uint32_t result;
+  uint64_t result;
   result = expr(args, &flag);
   if(flag == true){
-    printf("The result of expression is: %u\n", result);
+    printf("The result of expression is: %lu\n", result);
   } else{
     printf("Not a good expression.\n");
   }

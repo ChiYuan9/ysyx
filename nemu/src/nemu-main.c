@@ -49,7 +49,8 @@ int main(int argc, char *argv[]) {
     printf("Correct: %u\t Test: %u\n", result1, result2);
   }
   fclose(file);
-  */ End
+  */
+  // End
 
   return is_exit_status_bad();
 }
