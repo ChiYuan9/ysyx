@@ -104,6 +104,17 @@ static int cmd_p(char *args){
   return 0;
 }
 
+static int cmd_w(char *args){
+  WP *tmp = new_wp();
+  int i = 0;
+  while(args[i] != '\0'){
+    tmp->expression[i] = args[i];
+    i++;
+  }
+  tmp->expression[i] = '\0';
+  return 0;
+}
+
 static int cmd_q(char *args) {
   return -1;
 }
@@ -122,6 +133,7 @@ static struct {
   { "info", "Display register state with'r', Display watchpoint info with 'w'", cmd_info},
   { "x", "Display memory", cmd_x },
   { "p", "Calculate the experssion", cmd_p},
+  { "w", "Set Watch point", cmd_w},
 
   /* TODO: Add more commands */
 
