@@ -20,25 +20,12 @@
 
 static WP wp_pool[NR_WP] = {};
 static WP *head = NULL, *free_ = NULL;
-static char *wp_result[32]= {
-  "string 0", "string 1", "string 2",
-  "string 3", "string 4", "string 5",
-  "string 6", "string 7", "string 8",
-  "string 9", "string 10", "string 11",
-  "string 12", "string 13", "string 14",
-  "string 15", "string 16", "string 17",
-  "string 18", "string 19", "string 20",
-  "string 21", "string 22", "string 23",
-  "string 24", "string 25", "string 26",
-  "string 27", "string 28", "string 29",
-  "string 30", "string 31"
-};
 
 void init_wp_pool() {
   int i;
   for (i = 0; i < NR_WP; i ++) {
     wp_pool[i].NO = i;
-    wp_pool[i].expression = wp_result[i];
+    wp_pool[i].expression = strdup("String");
     wp_pool[i].result = -1;
     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
   }
@@ -87,14 +74,15 @@ void free_wp(WP *wp){
   }
 
   if(prev == NULL){
-    head = NULL;
+    head = cur->next;
     free_ = wp_pool;
+    cur->next = free_;
+    free_ = cur;
   }else{
     prev->next = cur->next;
     cur->next = free_;
     free_ = cur;
   }
-  wp->expression = '\0';
   wp->result = -1;
 }
 
@@ -109,7 +97,39 @@ bool cal_wp(){
     int result = expr(tmp->expression, &flag_cal);
     if (flag_cal == false){assert(0);}
     if(tmp->result != -1 && result != tmp->result){flag = true;}
+    tmp->result = result;
+    tmp = tmp->next;
   }
   return flag;
 
+}
+
+void display_wp(){
+  if(head == NULL){
+    printf("No watch point right now\n");
+    return;
+  }
+  WP *tmp = head;
+  while(tmp != NULL){
+    printf("Watchpoint %d(%s):%x\n", tmp->NO, tmp->expression, tmp->result);
+    tmp = tmp->next;
+  }
+}
+
+void delete_wp(int n){
+  WP *tmp = head;
+  bool flag = false;
+  while(tmp != NULL){
+    if(tmp->NO == n){
+      free_wp(tmp);
+      flag = true;
+      break;
+    }
+    tmp = tmp->next;
+  }
+  if(flag == true){
+    printf("Delete watchpoint %d\n", n);
+  }else{
+    printf("Don't have watchpoint %d\n", n);
+  }
 }

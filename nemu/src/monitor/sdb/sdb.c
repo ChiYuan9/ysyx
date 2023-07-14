@@ -57,23 +57,23 @@ static int cmd_si(char *args) {
 
 static int cmd_x(char *args){
   char *arg1 = strtok(NULL, " ");
-  char *arg2 = strtok(NULL, " ");
+  char *arg2 = strtok(NULL, "\0");
   if(arg1 == NULL || arg2 == NULL){
     printf("Pleas provide two arguments\n");
     return 0;
   }
   int n = atoi(arg1);
-
-  char *endPtr;
-  long addr = strtol(arg2, &endPtr, 16);
-  if(endPtr == arg2) {
-        printf("Invalid hex value: %s\n", arg2);
-        return 0;
+  bool flag = false;
+  uint64_t result;
+  result = expr(arg2, &flag);
+  if(flag == false){
+    printf("Please provide a correct expression\n");
+    return 0;
   }
-  
+
   for(int i = 0; i < n; i++){
-    printf("0x%lx: 0x%lx\t", addr, vaddr_read(addr, 4));
-    addr += 4;
+    printf("0x%lx: 0x%lx\t", result, vaddr_read(result, 4));
+    result += 4;
   }
   printf("\n");
 
@@ -84,9 +84,9 @@ static int cmd_info(char *args){
   if(args[0] == 'r'){
     isa_reg_display();
   }else if(args[0] == 'w'){
-    return 0;
+    display_wp();
   }else{
-    printf("Unknown argument\n");
+    printf("Unknown argument, 'r' for register 'w' for watchpoint\n");
   }
   return 0;
 
@@ -115,6 +115,12 @@ static int cmd_w(char *args){
   return 0;
 }
 
+static int cmd_d(char *args){
+  int n = atoi(args);
+  delete_wp(n);
+  return 0;
+}
+
 static int cmd_q(char *args) {
   return -1;
 }
@@ -134,6 +140,7 @@ static struct {
   { "x", "Display memory", cmd_x },
   { "p", "Calculate the experssion", cmd_p},
   { "w", "Set Watch point", cmd_w},
+  { "d", "delete watch point", cmd_d},
 
   /* TODO: Add more commands */
 

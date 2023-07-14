@@ -30,4 +30,6 @@ word_t expr(char *e, bool *success);
 WP* new_wp();
 void free_wp(WP *wp);
 bool cal_wp();
+void display_wp();
+void delete_wp(int n);
 #endif
