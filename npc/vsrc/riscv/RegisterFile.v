@@ -1,11 +1,11 @@
-module RegisterFile #(ADDR_WIDTH = 5, DATA_WIDTH = 64) (
+module RegisterFile #(ADDR_WIDTH = 32, DATA_WIDTH = 64) (
     input clk,
     input [DATA_WIDTH-1:0] wdata,
-    input [ADDR_WIDTH-1:0] waddr,
-    input wen
+    input [4:0] waddr,
+    input wen,
 
-    input [ADDR_WIDTH-1:0] rs1,
-    input [ADDR_WIDTH-1:0] rs2,
+    input [4:0] rs1,
+    input [4:0] rs2,
     output [DATA_WIDTH-1:0] src1,
     output [DATA_WIDTH-1:0] src2
 );
@@ -13,6 +13,9 @@ module RegisterFile #(ADDR_WIDTH = 5, DATA_WIDTH = 64) (
     always @(posedge clk) begin
         if(wen) rf[waddr] <= wdata;
     end
+    assign src1 = rf[rs1];
+    assign src2 = rf[rs2];
+    /*
     MuxKey #(32, ADDR_WIDTH, DATA_WIDTH) rf_i1(src1, rs1, {
         5'b00000, 64'b0, 5'b00001, rf[1],
         5'b00010, rf[2], 5'b00011, rf[3],
@@ -29,7 +32,7 @@ module RegisterFile #(ADDR_WIDTH = 5, DATA_WIDTH = 64) (
         5'b11000, rf[24], 5'b11001, rf[25],
         5'b11010, rf[26], 5'b11011, rf[27],
         5'b11100, rf[28], 5'b11101, rf[29],
-        5'b11110, rf[30], 5'b11111, rf[31],
+        5'b11110, rf[30], 5'b11111, rf[31]
     });
     MuxKey #(32, ADDR_WIDTH, DATA_WIDTH) rf_i2(src2, rs2, {
         5'b00000, 64'b0, 5'b00001, rf[1],
@@ -47,6 +50,7 @@ module RegisterFile #(ADDR_WIDTH = 5, DATA_WIDTH = 64) (
         5'b11000, rf[24], 5'b11001, rf[25],
         5'b11010, rf[26], 5'b11011, rf[27],
         5'b11100, rf[28], 5'b11101, rf[29],
-        5'b11110, rf[30], 5'b11111, rf[31],
+        5'b11110, rf[30], 5'b11111, rf[31]
     });
+    */
 endmodule

@@ -1,5 +1,5 @@
 module Decoder (
-    input [63:0] inst,
+    input [31:0] inst,
     output [4:0] rs1,
     output [4:0] rs2,
     output [63:0] imm,
