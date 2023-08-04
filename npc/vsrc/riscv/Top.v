@@ -4,8 +4,9 @@ module Top (
 
     input [31:0] inst,
     output reg [31:0] pc,
-    output [63:0] wdata,
-    output [63:0] tmp
+
+    output is_ebreak,
+    output [63:0] src2_result
 );
 
     // PC update
@@ -16,11 +17,11 @@ module Top (
     wire [4:0] rs1, rs2, rd;
     wire [63:0] imm;
     wire is_addi;
-    Decoder dec_i(inst, rs1, rs2, imm, rd, is_addi);
+    Decoder dec_i(inst, rs1, rs2, imm, rd, is_addi, is_ebreak);
     // RegisterFile
-    wire [63:0] src1, src2;
+    wire [63:0] src1, src2, wdata;
     RegisterFile regfile_i(clk, wdata, rd, is_addi, rs1, rs2, src1, src2);
     // EXU
     assign wdata = src1 + imm;
-    assign tmp = src2;
+    assign src2_result = src2;
 endmodule
