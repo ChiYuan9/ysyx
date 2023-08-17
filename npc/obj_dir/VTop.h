@@ -10,24 +10,27 @@
 
 #include "verilated.h"
 
-class Vtop__Syms;
-class Vtop___024root;
+class VTop__Syms;
+class VTop___024root;
 class VerilatedVcdC;
 
 // This class is the main interface to the Verilated model
-class Vtop VL_NOT_FINAL : public VerilatedModel {
+class VTop VL_NOT_FINAL : public VerilatedModel {
   private:
     // Symbol table holding complete model state (owned by this class)
-    Vtop__Syms* const vlSymsp;
+    VTop__Syms* const vlSymsp;
 
   public:
 
     // PORTS
     // The application code writes and reads these signals to
     // propagate new values into/out from the Verilated model.
-    VL_IN8(&a,0,0);
-    VL_IN8(&b,0,0);
-    VL_OUT8(&f,0,0);
+    VL_IN8(&clk,0,0);
+    VL_IN8(&rst,0,0);
+    VL_OUT8(&is_ebreak,0,0);
+    VL_IN(&inst,31,0);
+    VL_OUT(&pc,31,0);
+    VL_OUT64(&src2_result,63,0);
 
     // CELLS
     // Public to allow access to /* verilator public */ items.
@@ -35,19 +38,19 @@ class Vtop VL_NOT_FINAL : public VerilatedModel {
 
     // Root instance pointer to allow access to model internals,
     // including inlined /* verilator public_flat_* */ items.
-    Vtop___024root* const rootp;
+    VTop___024root* const rootp;
 
     // CONSTRUCTORS
     /// Construct the model; called by application code
     /// If contextp is null, then the model will use the default global context
     /// If name is "", then makes a wrapper with a
     /// single model invisible with respect to DPI scope names.
-    explicit Vtop(VerilatedContext* contextp, const char* name = "TOP");
-    explicit Vtop(const char* name = "TOP");
+    explicit VTop(VerilatedContext* contextp, const char* name = "TOP");
+    explicit VTop(const char* name = "TOP");
     /// Destroy the model; called (often implicitly) by application code
-    virtual ~Vtop();
+    virtual ~VTop();
   private:
-    VL_UNCOPYABLE(Vtop);  ///< Copying not allowed
+    VL_UNCOPYABLE(VTop);  ///< Copying not allowed
 
   public:
     // API METHODS

@@ -1,4 +1,4 @@
-TOPNAME = top
+TOPNAME = Top
 NXDC_FILES = constr/exp/exp6.nxdc
 INC_PATH ?=
 
@@ -20,8 +20,8 @@ $(SRC_AUTO_BIND): $(NXDC_FILES)
 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
 
 #project source
-VSRCS = $(shell find $(abspath ./vsrc/exp/exp6) -name "*.v")
-CSRCS = $(shell find $(abspath ./csrc/exp/exp6) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
+VSRCS = $(shell find $(abspath ./vsrc/riscv) -name "*.v")
+CSRCS = $(shell find $(abspath ./csrc/riscv) -name "*.c" -or -name "*.cc" -or -name "*.cpp")
 CSRCS += $(SRC_AUTO_BIND)
 
 #rules for NVBoard
