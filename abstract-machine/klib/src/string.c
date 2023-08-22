@@ -16,6 +16,8 @@ size_t strlen(const char *s) {
 }
 
 char *strcpy(char *dst, const char *src) {
+
+
    char *saved = dst;
    while (*src)
    {
@@ -23,6 +25,7 @@ char *strcpy(char *dst, const char *src) {
    }
    *dst = 0;
    return saved;
+   
 }
 
 char *strncpy(char *dst, const char *src, size_t n) {
