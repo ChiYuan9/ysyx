@@ -5,6 +5,8 @@
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
 size_t strlen(const char *s) {
+
+
   size_t count = 0;
   
   while(*s!='\0')
@@ -13,6 +15,7 @@ size_t strlen(const char *s) {
     s++;
   }
   return count;
+  
 }
 
 char *strcpy(char *dst, const char *src) {
