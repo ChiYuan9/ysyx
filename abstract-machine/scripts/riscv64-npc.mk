@@ -1,5 +1,4 @@
 include $(AM_HOME)/scripts/isa/riscv64.mk
-
 AM_SRCS := riscv/npc/start.S \
            riscv/npc/trm.c \
            riscv/npc/ioe.c \
@@ -20,3 +19,7 @@ image: $(IMAGE).elf
 	@$(OBJDUMP) -d $(IMAGE).elf > $(IMAGE).txt
 	@echo + OBJCOPY "->" $(IMAGE_REL).bin
 	@$(OBJCOPY) -S --set-section-flags .bss=alloc,contents -O binary $(IMAGE).elf $(IMAGE).bin
+
+run: image
+	$(MAKE) -C /home/yuan/Documents/ysyx-workbench/npc/vsrc/riscv/ sim
+	cd /home/yuan/Documents/ysyx-workbench/npc/build && ./Top

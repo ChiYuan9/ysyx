@@ -7,35 +7,31 @@
 #include <cstdint>
 #include <iomanip>
 #include <string>
+#include <cstdlib>
 
 
 #include "VTop.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 
-#ifndef BIN_FILE_PATH
-#define BIN_FILE_PATH "/home/yuan/Documents/ysyx-workbench/am-kernels/tests/cpu-tests/build/dummy-riscv64-npc.bin"
+/*
+#ifndef FILE_PATH
+#define FILE_PATH "/home/yuan/Documents/ysyx-workbench/am-kernels/tests/cpu-tests/build/dummy-riscv64-npc.bin"
 #endif
+*/
+
 
 const int MEM_SIZE = 10000;
 std::vector<uint32_t> pmem;
 
 int pmem_read(uint32_t pc){
 	return pmem[pc-0x80000000];
-	/*
-	if(pc == 0x80000000){return 0x00100093;}
-	else if(pc == 0x80000004){return 0x00200113;}
-	else if(pc == 0x80000008){return 0x01008193;}
-	else if(pc == 0x8000000c){return 0x02010213;}
-	else if(pc == 0x80000010){return 0x00f00013;}
-	else if(pc == 0x80000014){return 0x00100073;}
-	else return 0x00f00013;
-	*/
 }
 
 void pmem_set(){
-	
-	std::ifstream file(std::string(BIN_FILE_PATH), std::ios::binary);
+	const char* filePath = FILE_PATH;
+    std::cout << "File path: " << filePath << std::endl;
+	 std::ifstream file(std::string(FILE_PATH), std::ios::binary);
 	if (!file.is_open()) {
     	std::cerr << "Failed to open the file." << std::endl;
     	return;
