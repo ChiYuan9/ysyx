@@ -24,14 +24,21 @@
 const int MEM_SIZE = 10000;
 std::vector<uint32_t> pmem;
 
-int pmem_read(uint32_t pc){
-	return pmem[pc-0x80000000];
+int pmem_read(uint64_t pc){
+
+	/*
+	if(pc < 0x80000100){
+		std::cout << std::hex << pc << std::endl;
+		std::cout << std::hex << pmem[(pc - 0x80000000)/4] << std::endl;
+	}
+	*/
+	return pmem[(pc-0x80000000)/4];
 }
 
 void pmem_set(){
 	const char* filePath = FILE_PATH;
     std::cout << "File path: " << filePath << std::endl;
-	 std::ifstream file(std::string(FILE_PATH), std::ios::binary);
+	std::ifstream file(std::string(FILE_PATH), std::ios::binary);
 	if (!file.is_open()) {
     	std::cerr << "Failed to open the file." << std::endl;
     	return;
@@ -58,7 +65,7 @@ void pmem_set(){
 	// print pmem
 	
     std::cout << "Array elements (hex): ";
-    for (size_t i = 0; i < pmem.size(); ++i) {
+    for (size_t i = 0; i < pmem.size(); i=i+1) {
         std::cout << std::hex << std::setw(8) << std::setfill('0') << pmem[i] << " ";
     }
     std::cout << std::endl;
@@ -82,9 +89,10 @@ int main(int argc, char** argv)
 	top->clk = 0; top->eval();
 	top->clk = 1; top->eval();
 	top->rst = 0;
-	
+	int i = 0;
 	while(true){
 		if(top->is_ebreak == 1){break;}
+		i++;
 		top->inst = pmem_read(top->pc);
 		top->clk = 0; top->eval();
 		tfp->dump(contextp->time());
