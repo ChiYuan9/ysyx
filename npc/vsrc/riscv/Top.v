@@ -11,6 +11,9 @@ module Top (
 
 );
 
+    import "DPI-C" function void set_gpr_ptr(input logic [63:0] a []);
+    initial set_gpr_ptr(regfile_i.rf);
+
     // PC update
     reg [63:0] snpc;
     assign snpc = is_jal ? (pc + imm) :

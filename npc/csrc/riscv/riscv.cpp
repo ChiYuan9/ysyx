@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <vector>
 #include <vector>
 #include <cstdint>
 #include <iomanip>
@@ -13,26 +15,35 @@
 #include "VTop.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
+#include "verilated_dpi.h"
 
-/*
-#ifndef FILE_PATH
-#define FILE_PATH "/home/yuan/Documents/ysyx-workbench/am-kernels/tests/cpu-tests/build/dummy-riscv64-npc.bin"
-#endif
-*/
+#include "/home/yuan/Documents/ysyx-workbench/nemu/src/utils/disasm.h"
+
+#define RESET   "\033[0m"
+#define RED     "\033[31m"      /* Red */
+#define GREEN   "\033[32m"      /* Green */
+
 
 
 const int MEM_SIZE = 10000;
-std::vector<uint32_t> pmem;
+uint64_t *cpu_gpr = NULL;
+char buf_assembly[128];
+
+extern "C" void set_gpr_ptr(const svOpenArrayHandle r) {
+  cpu_gpr = (uint64_t *)(((VerilatedDpiOpenVar*)r)->datap());
+}
+
+// std::vector<uint8_t> pmem;
+uint8_t pmem[100000];
+std::string sdbInput, command;
+std::vector<std::string> arguments;
+
+std::vector<std::string> get_command(const std::string& input, std::string& command);
+void dump_gpr();
 
 int pmem_read(uint64_t pc){
-
-	/*
-	if(pc < 0x80000100){
-		std::cout << std::hex << pc << std::endl;
-		std::cout << std::hex << pmem[(pc - 0x80000000)/4] << std::endl;
-	}
-	*/
-	return pmem[(pc-0x80000000)/4];
+	uint32_t inst = pmem[pc-0x80000000] | (pmem[pc+1-0x80000000] << 8) | (pmem[pc+2-0x80000000] << 16) | (pmem[pc+3-0x80000000] << 24);
+	return inst;
 }
 
 void pmem_set(){
@@ -55,27 +66,34 @@ void pmem_set(){
 
     file.close();
 
-    // Store data in 4-byte integers
-    pmem.clear();
+    // pmem.clear();
     for (size_t i = 0; i + 3 < buffer.size(); i += 4) {
-        uint32_t data = (buffer[i]) | (buffer[i + 1] << 8) | (buffer[i + 2] << 16) | (buffer[i + 3] << 24);
-        pmem.push_back(data);
+		uint8_t data = buffer[i];
+		// pmem.push_back(data);
+		// data = buffer[i+1];
+		// pmem.push_back(data);
+		// data = buffer[i+2];
+		// pmem.push_back(data);
+		// data = buffer[i+3];
+		// pmem.push_back(data);
+		pmem[i] = data;
+		data = buffer[i+1];
+		pmem[i + 1] = data;
+		data = buffer[i+2];
+		pmem[i + 2] = data;
+		data = buffer[i+3];
+		pmem[i + 3] = data;
+
     }
-	
-	// print pmem
-	
-    std::cout << "Array elements (hex): ";
-    for (size_t i = 0; i < pmem.size(); i=i+1) {
-        std::cout << std::hex << std::setw(8) << std::setfill('0') << pmem[i] << " ";
-    }
-    std::cout << std::endl;
-	
-	
 }
 
 int main(int argc, char** argv)
 {
 	pmem_set();
+	int i = 0;
+	bool continue_sdb = false;
+	int siCount_sdb = 0;
+
 	VerilatedContext* contextp = new VerilatedContext;
   	contextp->commandArgs(argc, argv);
   	VTop* top = new VTop{contextp};
@@ -89,10 +107,67 @@ int main(int argc, char** argv)
 	top->clk = 0; top->eval();
 	top->clk = 1; top->eval();
 	top->rst = 0;
-	int i = 0;
 	while(true){
-		if(top->is_ebreak == 1){break;}
+		if(continue_sdb == false && siCount_sdb == 0){
+
+			std::cout << "(sdb): ";
+			std::getline(std::cin, sdbInput);
+			// std::cout << sdbInput << std::endl;
+			arguments = get_command(sdbInput, command);
+
+			if(command == "c"){
+				continue_sdb = true;
+				arguments.clear();
+			} else if(command == "si"){
+				if(arguments.empty()){
+					printf("Need a argument\n");
+					continue;
+				}
+				siCount_sdb = std::stoi(arguments[0]);
+				arguments.clear();
+				continue;
+			} else if(command == "info"){
+				printf("PC: 0x%lx\n", top->pc);
+				dump_gpr();
+				arguments.clear();
+				continue;
+			} else if(command == "x"){
+				if(arguments.empty()){
+					printf("Need two arguments\n");
+					continue;
+				}
+				int num = std::stoi(arguments[0]);
+				uint64_t addr_start = std::stoull(arguments[1], nullptr, 16);
+				for(int i = 0; i < num; i++){
+					printf("0x%lx: 0x%x\n", addr_start+4*i, pmem_read(addr_start+4*i));
+				}
+				arguments.clear();
+				continue;
+			} else{
+				continue;
+			}
+
+		}
+		if(siCount_sdb > 0){ siCount_sdb--;}
+
+		// Trace
+		printf("0x%x\n", pmem_read(top->pc));
+		void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+		char disasm_buf[128];
+		char *disasm_p;
+		disassemble(disasm_p, 100, top->pc, pmem, 4);
+
+		// Realize HIT GOOD/BAD TRAP
+		if(top->is_ebreak == 1){
+			std::cout << GREEN << "HIT GOOD TRAP" << RESET << std::endl;
+			break;
+		}
 		i++;
+		if(i==10000){
+			std::cout << RED << "HIT BAD TRAP" << RESET << std::endl;
+			break;
+		}
+		
 		top->inst = pmem_read(top->pc);
 		top->clk = 0; top->eval();
 		tfp->dump(contextp->time());
@@ -107,4 +182,28 @@ int main(int argc, char** argv)
 	tfp->close();
 	delete contextp;
 	return 0;
+}
+
+
+std::vector<std::string> get_command(const std::string& input, std::string& command) {
+    std::istringstream iss(input);
+    
+    iss >> command;
+    
+    std::vector<std::string> arguments;
+    std::string arg;
+    
+    while (iss >> arg) {
+        arguments.push_back(arg);
+    }
+
+    return arguments;
+}
+
+void dump_gpr() {
+  int i;
+  for (i = 0; i < 32; i++) {
+    printf("gpr[%d] = 0x%lx\t", i, cpu_gpr[i]);
+  }
+  printf("\n");
 }
